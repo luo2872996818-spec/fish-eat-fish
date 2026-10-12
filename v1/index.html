@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+
+<!--
+  ==========================================================================
+  【手机端三件套】—— 少一个都会出问题，逐条解释：
+  --------------------------------------------------------------------------
+  width=device-width    页面按手机的真实宽度布局。不加这行，手机会假装屏幕有
+                        980px 宽再整体缩小，字会小得像蚂蚁。
+  initial-scale=1       初始缩放 1 倍，别自作主张放大。
+  maximum-scale=1
+  user-scalable=no      禁止双指放大 / 双击放大。游戏里要拖动，不禁掉的话
+                        拖一下页面就放大了，玩不了。
+  viewport-fit=cover    允许画面画到刘海/挖孔区域里（否则屏幕上下会各留一条
+                        黑边）。画完之后由 CSS 里的 safe-area 内边距把重要
+                        内容避开刘海，见 style.css。
+  ==========================================================================
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+
+<!-- 手机浏览器顶部地址栏 / 状态栏的配色 -->
+<meta name="theme-color" content="#04202e">
+
+<!-- 下面三行让"添加到主屏幕"之后看起来像个 App（没有地址栏，全屏） -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="大鱼吃小鱼">
+
+<meta name="description" content="大鱼吃小鱼 · 纯前端小游戏：吃小鱼长大，躲大鱼保命。手机点开就能玩。">
+<title>大鱼吃小鱼</title>
+<!-- 内联 SVG 图标：把图标直接写成 data URI，浏览器不会再额外请求 favicon.ico，
+     所以控制台里那条 404 就消失了。顺便让浏览器标签页和书签有个鱼的样子。
+     （# 必须写成 %23，因为 # 在 URL 里是"锚点"的意思） -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a4a63'/%3E%3Cpath d='M14 32 L4 23 L4 41 Z' fill='%234aa8d8'/%3E%3Cellipse cx='32' cy='32' rx='17' ry='11' fill='%237fd8ff'/%3E%3Ccircle cx='41' cy='28' r='2.6' fill='%2304202e'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- .stage = 游戏舞台，铺满整个屏幕；canvas = 真正画东西的地方 -->
+<main class="stage" id="stage">
+  <canvas id="game" aria-label="大鱼吃小鱼游戏区域"></canvas>
+
+  <!-- 自检信息面板：这一版用来验证"手机适配 + 触摸定位"是否正确，
+       等阶段 1 写完真正的游戏，这个面板会删掉 -->
+  <div class="diag" id="diag">正在自检…</div>
+</main>
+
+<!--
+  type="module" 的作用：每个 .js 文件都是一个独立模块，变量不会互相污染，
+  用 import / export 显式声明依赖关系（比一堆 <script> 按顺序排好得多）。
+
+  代价：不能用 file:// 直接双击 index.html 打开（浏览器会以 CORS 为由拒绝
+  加载模块）。本地预览需要起一个服务器，命令见 README.md。
+  ==========================================================================
+-->
+<script type="module" src="./src/main/main.js"></script>
+</body>
+</html>

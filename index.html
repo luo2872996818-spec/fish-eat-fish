@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04202e">
+<!-- noindex：告诉搜索引擎别收录这个跳转页本身 -->
+<meta name="robots" content="noindex">
+
+<!--
+  ==========================================================================
+  这个文件是"门牌号"，不是游戏本体。真正的内容在 ./v1/ 里。
+  --------------------------------------------------------------------------
+  为什么要多这一层？因为你说了"后续可能会升级"。
+
+  以后做 v2 的时候，只要把下面 ./v1/ 改成 ./v2/，
+  别人收藏的链接、分享到群里的链接全都不会失效，
+  而且老版本还能留在 v1/ 里继续访问（万一 v2 有 bug，改回来一秒就好）。
+
+  如果一开始就把游戏放在仓库根目录，将来升级就得原地覆盖，
+  一旦新版出问题，回退只能靠 Git 历史，手机上没法立刻恢复。
+  ==========================================================================
+-->
+
+<!-- 兜底方案一：万一浏览器禁用了 JavaScript，用 meta 刷新也能跳过去 -->
+<meta http-equiv="refresh" content="0; url=./v1/">
+
+<script>
+  // 主方案：立刻跳到 v1。
+  // 用 location.replace 而不是 location.href，是因为 replace 不会留下历史记录 ——
+  // 这样手机按"返回"键时不会卡在这个跳转页上反复横跳。
+  // 后面的 search 和 hash 是"接力棒"：把 ?参数 和 #锚点 原样带给 v1 里的页面。
+  location.replace('./v1/' + location.search + location.hash);
+</script>
+</head>
+<body>
+  <p>正在打开《大鱼吃小鱼》…</p>
+  <p>如果没有自动跳转，点 <a href="./v1/">这里</a>。</p>
+</body>
+</html>
