@@ -190,3 +190,47 @@ git -c http.proxy=http://127.0.0.1:7900 ls-remote https://github.com/...
 或者用 GitHub Desktop 点两下。**关键**：改完推送后一定要跑一次
 `node tools/check-deploy.mjs https://luo2872996818-spec.github.io/fish-eat-fish/`
 —— 让脚本告诉你线上到底有没有问题，而不是靠肉眼看。
+
+
+---
+
+## 阶段总结：阶段 0 —— 部署自检（按 AGENTS.md 的总结模板）
+
+### 完成了什么？
+
+- `requirements.md`（需求文档，含"不做什么"清单）和 `design.md`（设计文档，含数值表初稿）
+- 平台适配层 `platform/`：`viewport.js`（尺寸/DPR/坐标换算）、
+  `input.js`（Pointer Events 统一触摸和鼠标）、`device.js`（安全区、设备能力）
+- 手机端适配 `style.css`：dvh 视口高度、刘海安全区、禁下拉刷新、禁双击缩放、防长按选中
+- 部署自检页 `v1/index.html` + `main.js`：能显示屏幕尺寸、DPR、安全区、触点坐标、帧率
+- 两个自研工具：`tools/serve.py`（本地服务器）、`tools/check-deploy.mjs`（线上验收，13 项）
+- 文档：`README.md`、`deployment.md`（部署手册）、`notes.md`（本文件）
+- **已上线**：https://luo2872996818-spec.github.io/fish-eat-fish/
+- **真机验证通过**：手机上打开正常，60 FPS
+
+### 遇到的问题
+
+| 问题 | 解决方式 |
+|---|---|
+| Windows 注册表把 `.js` 登记为 `text/plain`，导致 ES Module 被浏览器拒绝执行 | 自写 `tools/serve.py` 强制返回 `text/javascript` |
+| curl 和 git 不读 Windows 系统代理，连不上 github.com | 显式指定 `--proxy` / `http.proxy` |
+| PowerShell 5.1 发 JSON 请求体被 GitHub 拒收（400） | 改成写 UTF-8 无 BOM 文件 + `curl --data-binary` |
+| 无头浏览器截图抓得太早，看起来像 JS 没跑 | 改成等真实时间后再抓；学会用 DevTools Protocol 控制时机 |
+
+### 学到了什么？
+
+- **"页面空白"先看 F12 的 Console 和 Network**，别盯着代码猜。MIME、404、CORS 这三类问题的报错都很明确
+- **验证要拿数据说话**：与其目视"看起来没问题"，不如派发一次真实触摸、把页面里读到的坐标打出来比对
+- **平台差异要关在一层里**：把"屏幕多大、用什么东西输入"全部收敛到 `platform/`，
+  上层代码不知道自己在手机上还是电脑上 —— 这样将来加键盘、改横屏都不用动玩法代码
+- **部署形态要一开始就想好**：游戏放 `v1/` 而不是根目录，以后升级不破坏已分享的链接
+
+### 下一阶段的计划
+
+阶段 1：骨架能动
+
+- `main/config.js`：把所有数值集中起来（design.md 第 6 节的数值表）
+- `main/game-loop.js`：固定步长循环
+- `entities/player.js`：玩家鱼 —— 加速度、阻尼、限速、朝向、边界限制
+- `systems/render.js`：把背景、气泡、玩家鱼画出来
+- 验收：手机上手指拖动，鱼平滑跟随并转向；松手滑行减速；撞边界停住不出去
