@@ -112,3 +112,81 @@ curl.exe -sS -o NUL -w "%{content_type}`n" http://localhost:8000/v1/src/main/mai
 ### 下一步
 
 阶段 1：骨架能动 —— 一条真正的玩家鱼跟着手指游动，带加速度和阻尼，撞到边界不会跑出去。
+
+---
+
+## [2026-10-12] 部署上线（阶段 0 完成）
+
+### 结果
+
+**线上地址：https://luo2872996818-spec.github.io/fish-eat-fish/**
+仓库：https://github.com/luo2872996818-spec/fish-eat-fish
+
+线上验收 13 项全部通过：根地址正确跳转到 `/v1/`、无 404、无 JS 报错、
+画布 780×1688 物理像素正确、`touch-action: none`、页面不可滚动、
+**触摸坐标精确**（三组采样点全部命中）、60 FPS。
+
+### 踩坑：curl 和 git 都不走 Windows 系统代理（重要）
+
+**现象**：Edge 能正常打开 github.com，但命令行里 `curl https://github.com` 和
+`git ls-remote https://github.com/...` 全部超时（`Failed to connect ... after 21s`）。
+
+**根因**：这台机器开着本地代理（`HKCU\...\Internet Settings` 里
+`ProxyEnable=1`、`ProxyServer=127.0.0.1:7900`）。
+- Edge / PowerShell 的 `Invoke-WebRequest` 会**读系统代理设置**，所以能通；
+- **curl 和 git 不读**，它们只看环境变量 `HTTPS_PROXY` 或自己的配置，所以直连超时。
+
+**验证方法**（有用的排查套路）：
+
+```powershell
+# 读系统代理
+Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings" |
+  Select-Object ProxyEnable, ProxyServer
+
+# PowerShell 走系统代理 → 通
+Invoke-WebRequest https://github.com -UseBasicParsing -TimeoutSec 25
+
+# curl 显式指定代理 → 通
+curl.exe --proxy http://127.0.0.1:7900 https://api.github.com/user
+
+# git 显式指定代理 → 通
+git -c http.proxy=http://127.0.0.1:7900 ls-remote https://github.com/...
+```
+
+**解决**：本仓库已设置 `git config http.proxy http://127.0.0.1:7900`（**只作用于本仓库**，
+是本地开发配置，不在版本控制里）。
+⚠️ 如果哪天代理软件关了、或者端口变了，`git push` 会连不上 —— 那时执行
+`git config --unset http.proxy` 去掉它即可。
+
+### 踩坑：PowerShell 发 JSON 请求体被 GitHub 拒收
+
+`Invoke-RestMethod -Body ($obj | ConvertTo-Json)` 调 GitHub API 建仓库时返回
+`400 Problems parsing JSON`（PowerShell 5.1 的请求体编码问题）。
+
+**解决**：把 JSON 用 `[System.IO.File]::WriteAllText` 写成 **UTF-8 无 BOM** 的文件，
+再用 `curl.exe --data-binary "@文件"` 发送，绕开 PowerShell 的编码处理。
+以后凡是往 API 发中文 JSON，都用这个套路。
+
+### 这次是怎么发布的（可复现的步骤）
+
+因为没有 `gh` 命令行工具，是靠 GitHub REST API + git 完成的，全程没用网页界面：
+
+1. 用令牌验证身份：`GET /user`
+2. 建仓库：`POST /user/repos`
+3. 配置提交身份为 GitHub 的 noreply 邮箱（既关联头像，又不暴露真实邮箱）：
+   `253884885+luo2872996818-spec@users.noreply.github.com`
+4. 推送：`git -c "http.extraheader=Authorization: Basic <base64>" push -u origin main`
+   —— 用**一次性 extraheader** 传凭据，**不写进 `.git/config`**、不留痕
+5. 开 Pages：`POST /repos/{owner}/{repo}/pages`，body `{"source":{"branch":"main","path":"/"}}`
+6. 轮询 `GET .../pages` 直到 `status = built`，再用 `tools/check-deploy.mjs` 验收
+
+### 以后更新代码的流程
+
+```
+改代码 → git add -A → git commit -m "说明" → git push
+        → 等 1 分钟 GitHub Pages 自动重新构建 → 手机刷新即可
+```
+
+或者用 GitHub Desktop 点两下。**关键**：改完推送后一定要跑一次
+`node tools/check-deploy.mjs https://luo2872996818-spec.github.io/fish-eat-fish/`
+—— 让脚本告诉你线上到底有没有问题，而不是靠肉眼看。
